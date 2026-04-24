@@ -46,10 +46,11 @@
 </head>
 <body>
 
-    <div id="authContainer" class="card" style="margin-top: 50px;">
-        <h2 style="text-align: center;">👑 KINGz Vault</h2>
-        <input type="email" id="emailInput" placeholder="Email Address">
-        <input type="password" id="passwordInput" placeholder="Password">
+    <div id="authContainer" class="card" style="margin-top: 50px; text-align: center;">
+        <img src="https://i.imgur.com/uXZ68FP.png" style="width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 3px solid #27ae60; margin-bottom: 10px;" alt="KINGz Logo">
+        <h2 style="margin-top: 0;">👑 KINGz Vault</h2>
+        <input type="email" id="emailInput" placeholder="Email Address" style="text-align: left;">
+        <input type="password" id="passwordInput" placeholder="Password" style="text-align: left;">
         <button id="loginBtn" class="btn-green">Log In</button>
         <p style="text-align: center; font-size: 12px; cursor: pointer; color: var(--primary);" id="forgotPassBtn">Forgot or Change Password?</p>
         <p id="authError" style="color: var(--danger); text-align: center; font-size: 12px;"></p>
@@ -59,7 +60,7 @@
         <div class="header-bar">
             <div class="header-left">
                 <button class="theme-btn" id="themeToggle">🌓</button>
-                <img src="https://i.imgur.com/FeHmHHC.png" class="logo-img" alt="KINGz Logo">
+                <img src="https://i.imgur.com/uXZ68FP.png" class="logo-img" alt="KINGz Logo">
                 <div class="brand-text"><p class="brand-sub">Vault & Savings</p></div>
             </div>
             <div class="profile-area">
@@ -172,6 +173,9 @@
             hList.innerHTML = ""; pList.innerHTML = ""; adminLog.innerHTML = "";
             const sortedDocs = snap.docs.sort((a, b) => b.data().date - a.data().date);
             const now = new Date();
+            
+            // May 31, 2026 Deadline
+            const deadlineDate = new Date("2026-05-31T23:59:59");
 
             sortedDocs.forEach(d => {
                 const data = d.data();
@@ -180,9 +184,11 @@
                 const userEmail = currentUser.email.toLowerCase().trim();
                 let currentInt = 0;
 
+                // Fixed Logic: Only charge 5% if today's date is past May 31, 2026
                 if(data.type === 'loan' && data.status === 'approved') {
-                    const diffDays = Math.floor((now - data.date.toDate()) / (1000 * 60 * 60 * 24));
-                    if(diffDays > 30) currentInt = data.amount * 0.05;
+                    if(now > deadlineDate) {
+                        currentInt = data.amount * 0.05;
+                    }
                 }
 
                 if(data.status === "approved") {
@@ -199,7 +205,7 @@
 
                 if(recordEmail === userEmail) {
                     const dateStr = data.date ? data.date.toDate().toLocaleDateString() : 'N/A';
-                    hList.innerHTML += `<div class="history-item"><strong>${data.type.toUpperCase()}</strong>: ₦${data.amount.toLocaleString()} [${data.status}] ${currentInt > 0 ? `<span class="interest-tag">+₦${currentInt.toLocaleString()} Int.</span>` : ''}<br><small>${dateStr} | Ref: ${data.ref || 'N/A'}</small></div>`;
+                    hList.innerHTML += `<div class="history-item"><strong>${data.type.toUpperCase()}</strong>: ₦${data.amount.toLocaleString()} [${data.status}] ${currentInt > 0 ? `<span class="interest-tag">+₦${currentInt.toLocaleString()} Penalty</span>` : ''}<br><small>${dateStr} | Ref: ${data.ref || 'N/A'}</small></div>`;
                 }
                 if(userEmail === ADMIN_EMAIL) {
                     if(data.status === "pending") pList.innerHTML += `<button onclick="approve('${id}')" class="btn-green" style="font-size:9px; padding:4px; margin-bottom:5px;">Approve ${data.user} (₦${data.amount} - ${data.type})</button>`;
@@ -210,7 +216,7 @@
             document.getElementById("globalLoans").innerText = gl.toLocaleString();
             document.getElementById("pSavings").innerText = ps.toLocaleString();
             document.getElementById("pLoans").innerText = (pl + totalInt).toLocaleString();
-            document.getElementById("interestNotice").innerText = totalInt > 0 ? `(+₦${totalInt.toLocaleString()} Int.)` : "";
+            document.getElementById("interestNotice").innerText = totalInt > 0 ? `(+₦${totalInt.toLocaleString()} Penalty)` : "";
         }
 
         window.approve = async (id) => { if(confirm("Confirm in bank?")) { await updateDoc(doc(db, "ALL_TRANSACTIONS", id), { status: "approved" }); loadData(); } };
